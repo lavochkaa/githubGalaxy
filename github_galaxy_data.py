@@ -19,6 +19,10 @@ GRAPHQL = API + "/graphql"
 NAME = re.compile(r"^[A-Za-z0-9_.-]{1,100}$")
 CACHE: dict[str, tuple[float, dict]] = {}
 LOCK = threading.Lock()
+REFRESHING: set[str] = set()
+# Survives service restarts so a reload never spends the GitHub rate limit on data we already have.
+CACHE_FILE: Path | None = Path(os.environ.get("GITHUB_GALAXY_CACHE") or Path.home() / ".cache/github-galaxy/cache.json")
+STALE_LIMIT = 7 * 24 * 3600
 SUMMARY_TTL = 300
 DETAIL_TTL = 90
 OVERVIEW_TTL = 3600
@@ -115,20 +119,70 @@ def _rest_pages(path: str, token: str | None, maximum: int = 1000) -> list:
     return rows[:maximum]
 
 
+def _load_cache() -> None:
+    if not CACHE_FILE or not CACHE_FILE.exists():
+        return
+    try:
+        saved = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+        now = time.time()
+        CACHE.update({key: (float(at), value) for key, (at, value) in saved.items() if now - float(at) < STALE_LIMIT})
+    except (OSError, ValueError, TypeError):
+        pass
+
+
+def _save_cache() -> None:
+    if not CACHE_FILE:
+        return
+    try:
+        CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with LOCK:
+            payload = json.dumps(CACHE, ensure_ascii=False)
+        temporary = CACHE_FILE.with_suffix(".tmp")
+        temporary.write_text(payload, encoding="utf-8")
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, CACHE_FILE)
+    except OSError:
+        pass
+
+
+def _store(key: str, result: dict) -> dict:
+    with LOCK:
+        CACHE[key] = (time.time(), result)
+    _save_cache()
+    return result
+
+
+def _refresh(key: str, producer) -> None:
+    try:
+        _store(key, producer())
+    except Exception:
+        pass
+    finally:
+        with LOCK:
+            REFRESHING.discard(key)
+
+
 def _cache(key: str, ttl: int, producer) -> dict:
+    """Fresh hits return directly; expired hits return at once and refresh in the background."""
     with LOCK:
         saved = CACHE.get(key)
-        if saved and time.monotonic() - saved[0] < ttl:
+        if saved and time.time() - saved[0] < ttl:
             return saved[1]
+        if saved:
+            if key not in REFRESHING:
+                REFRESHING.add(key)
+                threading.Thread(target=_refresh, args=(key, producer), daemon=True).start()
+            return {**saved[1], "stale": True}
     try:
         result = producer()
     except GitHubUnavailable:
         if saved:
             return {**saved[1], "stale": True}
         raise
-    with LOCK:
-        CACHE[key] = (time.monotonic(), result)
-    return result
+    return _store(key, result)
+
+
+_load_cache()
 
 
 def _repo(node: dict) -> dict:

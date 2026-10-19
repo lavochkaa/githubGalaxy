@@ -1,6 +1,8 @@
 """GitHub inventory and lazy detail contract checks with a deterministic API stub."""
 import os
 import tempfile
+import time
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
@@ -10,6 +12,27 @@ import github_galaxy_data as galaxy
 class GitHubGalaxyTests(unittest.TestCase):
     def setUp(self):
         galaxy.CACHE.clear()
+        galaxy.CACHE_FILE = None
+
+    def test_cache_persists_to_disk_and_refreshes_expired_entries_in_background(self):
+        with tempfile.TemporaryDirectory() as folder:
+            galaxy.CACHE_FILE = Path(folder) / "cache.json"
+            calls = []
+            def produce():
+                calls.append(1)
+                return {"value": len(calls)}
+            self.assertEqual(galaxy._cache("k", 60, produce), {"value": 1})
+            self.assertEqual(oct(galaxy.CACHE_FILE.stat().st_mode & 0o777), "0o600")
+            galaxy.CACHE.clear()
+            galaxy._load_cache()
+            self.assertEqual(galaxy._cache("k", 60, produce), {"value": 1}, "restart reuses the disk cache")
+            galaxy.CACHE["k"] = (time.time() - 120, {"value": 1})
+            self.assertEqual(galaxy._cache("k", 60, produce), {"value": 1, "stale": True}, "expired hit answers at once")
+            for _ in range(100):
+                if galaxy.CACHE["k"][1] == {"value": 2}:
+                    break
+                time.sleep(.01)
+            self.assertEqual(galaxy.CACHE["k"][1], {"value": 2}, "background refresh replaces the entry")
 
     def test_graphql_paginates_all_owned_repositories_and_keeps_token_server_side(self):
         token = "test-private-token"
