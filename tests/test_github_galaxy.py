@@ -2,8 +2,8 @@
 import os
 import tempfile
 import time
-from pathlib import Path
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import github_galaxy_data as galaxy
