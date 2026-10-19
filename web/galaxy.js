@@ -12,6 +12,13 @@ import {
 import { createArmGalaxy, createArmCommitStars } from "./galaxy_gpu.js";
 
 const $ = (id) => document.getElementById(id);
+// Data source: the local server's API, or a static snapshot published next to the page (GitHub Pages).
+const STATIC = document.querySelector('meta[name="galaxy-source"]')?.content === "static";
+const endpoints = {
+  summary: () => (STATIC ? "data/galaxy.json" : "/api/github-galaxy"),
+  repo: (name) => (STATIC ? `data/repos/${encodeURIComponent(name)}.json` : "/api/github-galaxy/repo?name=" + encodeURIComponent(name)),
+  head: (name) => (STATIC ? `data/heads/${encodeURIComponent(name)}.json` : "/api/github-galaxy/head?name=" + encodeURIComponent(name)),
+};
 const host = $("galaxyCanvasHost"),
   stage = $("galaxyStage"),
   tip = $("galaxyTooltip"),
@@ -322,9 +329,11 @@ function build(data) {
   }
   const summary = data.simulated
     ? "SIMULATED / API UNAVAILABLE"
-    : data.source === "github-graphql"
-      ? "LIVE / GITHUB GRAPHQL"
-      : "LIVE / GITHUB PUBLIC API";
+    : data.snapshot
+      ? `SNAPSHOT / ${new Date(data.updatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }).toUpperCase()}`
+      : data.source === "github-graphql"
+        ? "LIVE / GITHUB GRAPHQL"
+        : "LIVE / GITHUB PUBLIC API";
   $("galaxyStatus").textContent = summary;
   $("galaxyStatus").title = data.reason || `Updated ${data.updatedAt}`;
   $("galaxyStatus").classList.toggle("galaxy-simulated", !!data.simulated);
@@ -469,7 +478,7 @@ function highlight(item, event) {
     clearTimeout(state.headTimer);
     state.headTimer = setTimeout(async () => {
       try {
-        const response = await fetch("/api/github-galaxy/head?name=" + encodeURIComponent(item.repo.name));
+        const response = await fetch(endpoints.head(item.repo.name));
         if (!response.ok) return;
         state.headCache.set(item.repo.name, await response.json());
         if (state.hovered?.repo.name === item.repo.name) highlight(item);
@@ -834,7 +843,7 @@ function detailSignature(data) {
 // One request per repository at a time; results stay in the page so reopening a repository is instant.
 function loadDetail(name) {
   if (state.detailRequests.has(name)) return state.detailRequests.get(name);
-  const request = fetch("/api/github-galaxy/repo?name=" + encodeURIComponent(name), { cache: "no-store" })
+  const request = fetch(endpoints.repo(name), { cache: "no-store" })
     .then((response) => {
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       return response.json();
@@ -1032,7 +1041,7 @@ function installInteraction() {
 async function refresh() {
   if (document.hidden || state.disposed) return;
   try {
-    const response = await fetch("/api/github-galaxy", { cache: "no-store" });
+    const response = await fetch(endpoints.summary(), { cache: "no-store" });
     if (!response.ok) throw Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (state.disposed) return;
