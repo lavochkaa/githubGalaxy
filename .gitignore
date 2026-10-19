@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local data and secrets
+.cache/
+*.log
+.env
+.env.*
+*.token
+github-token
+
+# Tooling
+node_modules/
+.DS_Store
+.idea/
+.vscode/
