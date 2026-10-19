@@ -1,15 +1,17 @@
-# GitHub Galaxy
+<h1 align="center">GitHub Galaxy</h1> # GitHub Galaxy
 
 Your GitHub account rendered as a living spiral galaxy. Every repository is one arm,
 every commit is a star on that arm, and the whole thing turns slowly around you at the core.
 
-![GitHub Galaxy overview](docs/overview.jpg)
+![GitHub Galaxy demo: hovering arms, opening a repository and orbiting the disc](docs/demo.gif)
 
 Select a repository and its full commit history lights up along its own arm. Branches run
 as parallel strands, merges glow brighter, HEAD carries a diffraction glint, and GitHub
 Actions runs pulse as rings around the commits they built.
 
 ![Repository drill-down](docs/repository.jpg)
+
+![Galaxy overview](docs/overview.jpg)
 
 ## Features
 
