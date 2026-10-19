@@ -10,8 +10,6 @@
 and the whole disc turns slowly around you at the core. A local, read-only, zero-dependency tool: one Python file serves
 the data, one WebGL page draws it.
 
-**Live: [lavochkaa.github.io/githubGalaxy](https://lavochkaa.github.io/githubGalaxy/)**
-
 https://github.com/user-attachments/assets/dfeddfe9-8698-45d1-9019-76ce550474e7
 
 
