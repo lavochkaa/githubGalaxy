@@ -9,7 +9,9 @@
 and the whole disc turns slowly around you at the core. A local, read-only, zero-dependency tool: one Python file serves
 the data, one WebGL page draws it.
 
-![GitHub Galaxy demo: hovering arms, opening a repository and orbiting the disc](docs/demo.gif)
+![GitHub Galaxy demo: hovering arms, opening a repository and orbiting the disc](docs/demo.gif)https://github.com/user-attachments/assets/dfeddfe9-8698-45d1-9019-76ce550474e7
+
+
 
 Click an arm and its history lights up: branches run as parallel strands, merges glow brighter, HEAD carries a
 diffraction glint, and GitHub Actions runs pulse as rings around the commits they built.
