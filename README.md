@@ -4,10 +4,13 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+[![Pages](https://github.com/lavochkaa/githubGalaxy/actions/workflows/pages.yml/badge.svg)](https://lavochkaa.github.io/githubGalaxy/)
 
 **Your GitHub account as a living spiral galaxy.** Each repository is a spiral arm, each commit is a star on that arm,
 and the whole disc turns slowly around you at the core. A local, read-only, zero-dependency tool: one Python file serves
 the data, one WebGL page draws it.
+
+**Live: [lavochkaa.github.io/githubGalaxy](https://lavochkaa.github.io/githubGalaxy/)**
 
 https://github.com/user-attachments/assets/dfeddfe9-8698-45d1-9019-76ce550474e7
 
@@ -118,6 +121,26 @@ browser (web/)                          server.py                   GitHub
 - **Rendering** goes into a half-float target, then a soft-threshold extract, a five-level bloom mip chain,
   exponential tone mapping, sRGB output and dithering.
 
+## Publish your own on GitHub Pages
+
+The repository deploys itself: a workflow builds a static snapshot of the owner's public repositories and publishes it
+with the interactive client. It runs on every push and every hour, so new commits show up within the hour.
+
+1. Fork this repository.
+2. In the fork, open **Settings → Pages** and set **Source** to **GitHub Actions**.
+3. Open **Actions → Pages → Run workflow** (or push any commit).
+
+Your galaxy appears at `https://<your-login>.github.io/githubGalaxy/`. The owner is taken from the repository owner, and
+the built-in `GITHUB_TOKEN` is enough for public data. For a higher rate limit, add a read-only token as the
+`GALAXY_TOKEN` repository secret.
+
+Only public repositories are published, because everything in the snapshot is public. To build locally:
+
+```sh
+python3 build_site.py --owner <login> --out _site     # add --include-private only for sites you keep private
+python3 -m http.server --directory _site 8000
+```
+
 ## Security model
 
 - The server binds to `127.0.0.1` by default and exposes three read-only `GET` routes.
@@ -135,6 +158,7 @@ token can see.
 
 ```
 server.py               local HTTP server and API routes
+build_site.py           static build for GitHub Pages: client plus JSON snapshot
 github_galaxy_data.py   GitHub GraphQL/REST client, validation, disk cache
 web/                    static client, no build step
   index.html            page and styles
