@@ -9,7 +9,7 @@
 and the whole disc turns slowly around you at the core. A local, read-only, zero-dependency tool: one Python file serves
 the data, one WebGL page draws it.
 
-![GitHub Galaxy demo: hovering arms, opening a repository and orbiting the disc](docs/demo.gif)https://github.com/user-attachments/assets/dfeddfe9-8698-45d1-9019-76ce550474e7
+https://github.com/user-attachments/assets/dfeddfe9-8698-45d1-9019-76ce550474e7
 
 
 
