@@ -7,6 +7,7 @@ import json
 import mimetypes
 import os
 import sys
+import traceback
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -58,8 +59,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(galaxy.head(self.owner, name))
         except ValueError as exc:
             return self.json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
-        except Exception as exc:  # The client renders any upstream failure as an empty state.
-            return self.json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+        except galaxy.GitHubUnavailable as exc:  # Messages are authored in github_galaxy_data and safe to show.
+            return self.json({"error": str(exc)}, HTTPStatus.BAD_GATEWAY)
+        except Exception:  # Internals stay in the server log, never in the response.
+            traceback.print_exc()
+            return self.json({"error": "Internal server error"}, HTTPStatus.INTERNAL_SERVER_ERROR)
         self.static(request.path)
 
     def static(self, path: str) -> None:

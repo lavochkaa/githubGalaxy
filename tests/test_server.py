@@ -57,6 +57,19 @@ class ServerTests(unittest.TestCase):
         with patch.object(server.galaxy, "detail", side_effect=ValueError("Invalid repository")):
             self.assertEqual(get("/api/github-galaxy/repo?name=../x").status, 400)
 
+    def test_internal_errors_are_not_leaked_to_the_client(self):
+        with patch.object(server.galaxy, "summary", side_effect=RuntimeError("secret path /home/x")), \
+             patch.object(server.traceback, "print_exc"):
+            response = get("/api/github-galaxy")
+        self.assertEqual(response.status, 500)
+        self.assertNotIn(b"secret", response.wfile.getvalue())
+
+    def test_github_unavailable_is_a_bad_gateway_with_its_message(self):
+        with patch.object(server.galaxy, "detail", side_effect=server.galaxy.GitHubUnavailable("GitHub API is unreachable")):
+            response = get("/api/github-galaxy/repo?name=x")
+        self.assertEqual(response.status, 502)
+        self.assertIn(b"unreachable", response.wfile.getvalue())
+
     def test_owner_falls_back_from_flag_to_environment_to_token_account(self):
         self.assertEqual(server.resolve_owner("octocat"), "octocat")
         with patch.dict("os.environ", {"GITHUB_OWNER": "hubot"}):
