@@ -327,6 +327,9 @@ function build(data) {
       : "LIVE / GITHUB PUBLIC API";
   $("galaxyStatus").textContent = summary;
   $("galaxyStatus").title = data.reason || `Updated ${data.updatedAt}`;
+  $("galaxyStatus").classList.toggle("galaxy-simulated", !!data.simulated);
+  if (data.simulated)
+    $("galaxyStatus").textContent = `SIMULATED DATA, NOT YOUR REPOSITORIES${data.reason ? " · " + data.reason.toUpperCase() : ""}`;
   $("galaxyCount").textContent = `${repos.length} REPOSITORIES · ${data.owner.toUpperCase()}`;
   $("galaxyOwner").textContent = (data.displayName || data.owner).toUpperCase();
   if (state.coreLabel)
