@@ -1,10 +1,19 @@
 <h1 align="center">GitHub Galaxy</h1>
 
-[![CI](https://github.com/lavochkaa/githubGalaxy/actions/workflows/ci.yml/badge.svg)](https://github.com/lavochkaa/githubGalaxy/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
-![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-[![Pages](https://github.com/lavochkaa/githubGalaxy/actions/workflows/pages.yml/badge.svg)](https://lavochkaa.github.io/githubGalaxy/)
+
+<p align="center">
+  <a href="https://github.com/lavochkaa/githubGalaxy/actions/workflows/ci.yml">
+    <img src="https://github.com/lavochkaa/githubGalaxy/actions/workflows/ci.yml/badge.svg" alt="CI status" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
+  </a>
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+" />
+  <img src="https://img.shields.io/badge/dependencies-none-brightgreen" alt="No dependencies" />
+  <a href="https://lavochkaa.github.io/githubGalaxy/">
+    <img src="https://github.com/lavochkaa/githubGalaxy/actions/workflows/pages.yml/badge.svg" alt="Pages status" />
+  </a>
+</p>
 
 **Your GitHub account as a living spiral galaxy.** Each repository is a spiral arm, each commit is a star on that arm,
 and the whole disc turns slowly around you at the core. A local, read-only, zero-dependency tool: one Python file serves
