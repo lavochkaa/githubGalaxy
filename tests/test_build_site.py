@@ -1,6 +1,7 @@
 """Static site build: client copied, snapshot written, private repositories kept out."""
 
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,7 +42,10 @@ class BuildSiteTests(unittest.TestCase):
         self.assertEqual(result["repositories"], 1)
         page = (out / "index.html").read_text()
         self.assertIn(build_site.STATIC_META, page)
-        self.assertIn('src="./galaxy.js"', page, "relative script path works under a project subpath")
+        version = re.search(r'src="\./galaxy\.js\?v=([a-f0-9]{12})"', page)
+        self.assertIsNotNone(version, "relative versioned script path works under a project subpath")
+        self.assertIn('name="galaxy-snapshot-version"', page)
+        self.assertIn(f'from "./galaxy_gpu.js?v={version.group(1)}"', (out / "galaxy.js").read_text())
         self.assertTrue((out / "galaxy.js").is_file() and (out / ".nojekyll").is_file())
         snapshot = json.loads((out / "data/galaxy.json").read_text())
         self.assertTrue(snapshot["snapshot"])

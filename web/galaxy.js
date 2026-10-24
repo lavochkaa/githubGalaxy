@@ -14,10 +14,12 @@ import { createArmGalaxy, createArmCommitStars } from "./galaxy_gpu.js";
 const $ = (id) => document.getElementById(id);
 // Data source: the local server's API, or a static snapshot published next to the page (GitHub Pages).
 const STATIC = document.querySelector('meta[name="galaxy-source"]')?.content === "static";
+const snapshotVersion = document.querySelector('meta[name="galaxy-snapshot-version"]')?.content;
+const staticPath = (path) => snapshotVersion ? `${path}?v=${snapshotVersion}` : path;
 const endpoints = {
-  summary: () => (STATIC ? "data/galaxy.json" : "/api/github-galaxy"),
-  repo: (name) => (STATIC ? `data/repos/${encodeURIComponent(name)}.json` : "/api/github-galaxy/repo?name=" + encodeURIComponent(name)),
-  head: (name) => (STATIC ? `data/heads/${encodeURIComponent(name)}.json` : "/api/github-galaxy/head?name=" + encodeURIComponent(name)),
+  summary: () => (STATIC ? staticPath("data/galaxy.json") : "/api/github-galaxy"),
+  repo: (name) => (STATIC ? staticPath(`data/repos/${encodeURIComponent(name)}.json`) : "/api/github-galaxy/repo?name=" + encodeURIComponent(name)),
+  head: (name) => (STATIC ? staticPath(`data/heads/${encodeURIComponent(name)}.json`) : "/api/github-galaxy/head?name=" + encodeURIComponent(name)),
 };
 const host = $("galaxyCanvasHost"),
   stage = $("galaxyStage"),

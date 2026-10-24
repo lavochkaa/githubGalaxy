@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 from concurrent.futures import ThreadPoolExecutor
@@ -29,6 +30,8 @@ def build(owner: str, out: Path, include_private: bool = False) -> dict:
     repos = [repo for repo in inventory["repositories"] if include_private or not repo["private"]]
     snapshot = {key: value for key, value in inventory.items() if key not in ("stale", "cacheAgeSeconds")}
     snapshot.update(repositories=repos, snapshot=True)
+    asset_version = hashlib.sha256((WEB / "galaxy.js").read_bytes() + (WEB / "galaxy_gpu.js").read_bytes()).hexdigest()[:12]
+    snapshot_version = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()[:12]
 
     if out.exists():
         shutil.rmtree(out)
@@ -36,8 +39,14 @@ def build(owner: str, out: Path, include_private: bool = False) -> dict:
     page = out / "index.html"
     html = page.read_text(encoding="utf-8")
     if STATIC_META not in html:
-        html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n' + STATIC_META, 1)
+        html = html.replace('<meta charset="utf-8">',
+                            '<meta charset="utf-8">\n' + STATIC_META +
+                            f'\n<meta name="galaxy-snapshot-version" content="{snapshot_version}">', 1)
+    html = html.replace('src="./galaxy.js"', f'src="./galaxy.js?v={asset_version}"', 1)
     page.write_text(html, encoding="utf-8")
+    script = out / "galaxy.js"
+    script.write_text(script.read_text(encoding="utf-8").replace(
+        'from "./galaxy_gpu.js"', f'from "./galaxy_gpu.js?v={asset_version}"', 1), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
 
     write_json(out / "data/galaxy.json", snapshot)
