@@ -263,7 +263,6 @@ function init() {
     $("galaxyLabels").appendChild(exposure);
   }
   installInteraction();
-  requestFrame();
   return true;
 }
 function build(data) {

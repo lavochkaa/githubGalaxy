@@ -30,7 +30,8 @@ def build(owner: str, out: Path, include_private: bool = False) -> dict:
     repos = [repo for repo in inventory["repositories"] if include_private or not repo["private"]]
     snapshot = {key: value for key, value in inventory.items() if key not in ("stale", "cacheAgeSeconds")}
     snapshot.update(repositories=repos, snapshot=True)
-    asset_version = hashlib.sha256((WEB / "galaxy.js").read_bytes() + (WEB / "galaxy_gpu.js").read_bytes()).hexdigest()[:12]
+    asset_version = hashlib.sha256(b"".join((WEB / name).read_bytes() for name in
+                                    ("galaxy.js", "galaxy_gpu.js", "space_renderer.js"))).hexdigest()[:12]
     snapshot_version = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()[:12]
 
     if out.exists():
@@ -45,8 +46,13 @@ def build(owner: str, out: Path, include_private: bool = False) -> dict:
     html = html.replace('src="./galaxy.js"', f'src="./galaxy.js?v={asset_version}"', 1)
     page.write_text(html, encoding="utf-8")
     script = out / "galaxy.js"
-    script.write_text(script.read_text(encoding="utf-8").replace(
-        'from "./galaxy_gpu.js"', f'from "./galaxy_gpu.js?v={asset_version}"', 1), encoding="utf-8")
+    script.write_text(script.read_text(encoding="utf-8")
+                      .replace('from "./galaxy_gpu.js"', f'from "./galaxy_gpu.js?v={asset_version}"', 1)
+                      .replace('from "./space_renderer.js"', f'from "./space_renderer.js?v={asset_version}"', 1),
+                      encoding="utf-8")
+    gpu = out / "galaxy_gpu.js"
+    gpu.write_text(gpu.read_text(encoding="utf-8").replace(
+        "from './space_renderer.js'", f"from './space_renderer.js?v={asset_version}'", 1), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
 
     write_json(out / "data/galaxy.json", snapshot)

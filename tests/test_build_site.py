@@ -46,6 +46,8 @@ class BuildSiteTests(unittest.TestCase):
         self.assertIsNotNone(version, "relative versioned script path works under a project subpath")
         self.assertIn('name="galaxy-snapshot-version"', page)
         self.assertIn(f'from "./galaxy_gpu.js?v={version.group(1)}"', (out / "galaxy.js").read_text())
+        self.assertIn(f'from "./space_renderer.js?v={version.group(1)}"', (out / "galaxy.js").read_text())
+        self.assertIn(f"from './space_renderer.js?v={version.group(1)}'", (out / "galaxy_gpu.js").read_text())
         self.assertTrue((out / "galaxy.js").is_file() and (out / ".nojekyll").is_file())
         snapshot = json.loads((out / "data/galaxy.json").read_text())
         self.assertTrue(snapshot["snapshot"])
