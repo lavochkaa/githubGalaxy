@@ -144,7 +144,7 @@ function bloomPass(width,height){
   }
   function setSize(bloomWidth,bloomHeight){let w=bloomWidth,h=bloomHeight;for(const mip of mips){w=Math.max(1,w>>1);h=Math.max(1,h>>1);mip.setSize(w,h);}}
   function dispose(){for(const target of [sceneTarget,bloomTarget,...mips])target.dispose();for(const m of [material,extractMaterial,downMaterial,upMaterial])m.dispose();geometry.dispose();}
-  return {sceneTarget,bloomTarget,scene,extractScene,camera,material,extractMaterial,geometry,blur,setSize,dispose,glow:true};
+  return {sceneTarget,bloomTarget,scene,extractScene,camera,material,extractMaterial,geometry,blur,setSize,dispose,glow:forceBloom};
 }
 export function createSpace(host,{radius=20,dust=2400,seed=7,shape='spiral'}={}){
   const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -157,7 +157,7 @@ export function createSpace(host,{radius=20,dust=2400,seed=7,shape='spiral'}={})
   const perimeterDust=dustCloud(Math.min(2200,Math.max(900,Math.round(dust*.13))),seed+91,'ambient',radius*2.25);
   perimeterDust.material.uniforms.uOpacity.value=.24;
   scene.add(perimeterNebula,perimeterDust,nebula,stars);
-  const bloom=bloomPass(1,1);let slow=0,slowSamples=0,frames=0,disposed=false;
+  const bloom=bloomPass(1,1);let slow=0,disposed=false;
   const resize=()=>{
     if(disposed)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;
     const ratio=Math.min(devicePixelRatio||1,bloom.glow?1.5:1);
@@ -168,21 +168,15 @@ export function createSpace(host,{radius=20,dust=2400,seed=7,shape='spiral'}={})
   };
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
   function render(now,delta=16){
-    frames++;
-    slow=delta>30?slow+1:Math.max(0,slow-1);
-    if(frames<=60&&delta>30)slowSamples++;
-    // Keep bloom hidden until the initial GPU speed is known.
-    if(!forceBloom&&bloom.glow&&((frames===60&&slowSamples>10)||slow>60)){bloom.glow=false;resize();}
     const t=now*.001;stars.material.uniforms.uTime.value=t;nebula.material.uniforms.uTime.value=t;
     perimeterDust.material.uniforms.uTime.value=t;perimeterNebula.material.uniforms.uTime.value=t;
     const phi=reducedMotion.matches?0:patternAngle(t);
     for(const cloud of [stars,nebula,perimeterDust,perimeterNebula])cloud.material.uniforms.uPatternAngle.value=phi;
     renderer.setRenderTarget(bloom.sceneTarget);renderer.render(scene,camera);
     if(bloom.glow){renderer.setRenderTarget(bloom.bloomTarget);renderer.render(bloom.extractScene,bloom.camera);bloom.blur(renderer);}
-    const bloomFade=forceBloom||reducedMotion.matches?1:Math.min(1,Math.max(0,(frames-60)/30));
-    bloom.material.uniforms.strength.value=bloom.glow?.55*bloomFade:0;
+    bloom.material.uniforms.strength.value=bloom.glow?.55:0;
     renderer.setRenderTarget(null);renderer.render(bloom.scene,bloom.camera);
-    // Slow GPUs keep the tone-mapped image but drop the glow chain and the retina resolution.
+    slow=delta>30?slow+1:Math.max(0,slow-1);
     if(slow>100&&!forceBloom&&stars.geometry.drawRange.count===Infinity)stars.geometry.setDrawRange(0,Math.ceil(dust*.6));
   }
   function dispose(){if(disposed)return;disposed=true;observer.disconnect();
