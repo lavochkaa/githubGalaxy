@@ -24,7 +24,7 @@ const COLORS={core:new THREE.Color(0xfff1dc),inner:new THREE.Color(0xffd7a3),mid
 
 function radialTone(target,u,tint){
   const color=u<.32?target.copy(COLORS.inner).lerp(COLORS.mid,u/.32):target.copy(COLORS.mid).lerp(COLORS.outer,Math.min(1,(u-.32)/.6));
-  return color.lerp(tint,.18+.5*Math.min(1,u/.5));
+  return color.lerp(tint,.42+.5*Math.min(1,u/.5));
 }
 function layer(count,extra){
   const fields={aArm:4,aOrbit:4,aColor:3,aSize:1,aBright:1,aSeed:1,...extra},data={};
@@ -54,6 +54,10 @@ void main(){vec3 p=armPointAt(aOrbit.x,aOrbit.y);vec4 mv=modelViewMatrix*vec4(p,
 const STAR_FRAGMENT=`varying vec3 vColor;varying float vAlpha;
 void main(){float d=length(gl_PointCoord-.5)*2.;float glow=exp(-d*d*7.)+exp(-d*4.)*.18;glow*=1.-smoothstep(.8,1.,d);
   gl_FragColor=vec4(vColor*glow*vAlpha,1.);}`;
+// Dense field stars need alpha blending; additive overlap saturates the HDR bloom.
+const STAR_FIELD_FRAGMENT=`varying vec3 vColor;varying float vAlpha;
+void main(){float d=length(gl_PointCoord-.5)*2.;float glow=exp(-d*d*7.)+exp(-d*4.)*.18;glow*=1.-smoothstep(.8,1.,d);
+  gl_FragColor=vec4(vColor,clamp(glow*vAlpha,0.,1.));}`;
 
 // Commits: real stars with a hot core, halo and four-point diffraction glint for the newest ones.
 const COMMIT_VERTEX=`attribute vec3 aColor;attribute float aSize;attribute float aBright;attribute float aSeed;attribute float aGlint;varying vec3 vColor;varying float vAlpha;varying float vGlint;
@@ -162,7 +166,7 @@ export function createArmGalaxy(items){
   add('lanes',lanes,material(shared({uStretch:{value:3.4},uDark:{value:1}}),CLOUD_VERTEX,CLOUD_FRAGMENT,THREE.NormalBlending),THREE.Points,2);
   add('lines',lines,material(shared({uColor:{value:new THREE.Color(0x9cc8ff)}}),LINE_VERTEX,LINE_FRAGMENT),THREE.LineSegments,3);
   add('bulge',bulge,material(shared({}),BULGE_VERTEX,STAR_FRAGMENT),THREE.Points,3);
-  add('stars',stars,material(shared({}),STAR_VERTEX,STAR_FRAGMENT),THREE.Points,4);
+  add('stars',stars,material(shared({}),STAR_VERTEX,STAR_FIELD_FRAGMENT,THREE.NormalBlending),THREE.Points,4);
   add('hii',hii,material(shared({uStretch:{value:1.3},uDark:{value:0}}),CLOUD_VERTEX,CLOUD_FRAGMENT),THREE.Points,5);
   add('commits',commits,material(shared({}),COMMIT_VERTEX,COMMIT_FRAGMENT),THREE.Points,6);
   const materials=Object.values(layers).map(object=>object.material);
