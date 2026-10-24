@@ -117,7 +117,8 @@ export function createArmGalaxy(items){
       const u=Math.pow(random(),.9),radius=inner+span*u,wide=random()<.14,lateral=gauss(random)*sigma(radius)*(wide?1.35:.6);
       const giant=random()<.035,ember=!giant&&random()<.02;
       radialTone(tone,u,tint);if(giant)tone.copy(COLORS.giant);if(ember)tone.copy(COLORS.ember);
-      const bright=(giant||ember?1.5:.5+random()*.5)*(1.08-.5*u)*(wide?.6:1);
+      const innerFade=Math.min(1,Math.max(0,(u-.06)/.26));
+      const bright=(giant||ember?1.5:.5+random()*.5)*(1.08-.5*u)*(wide?.6:1)*innerFade;
       push(stars,{aArm:armRow,aOrbit:[radius,lateral,gauss(random)*(.12+radius*.03)*(wide?1.8:1),random()*6.283],aColor:[tone.r,tone.g,tone.b],
         aSize:giant||ember?.11+random()*.07:.035+Math.pow(random(),3)*.06,aBright:bright,aSeed:random()});
     }
